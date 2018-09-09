@@ -3,7 +3,9 @@ package com.jxph.cloud.service.fast.server.task.taskjob;
 import com.jxph.cloud.service.fast.api.pojo.CouponTaskJob;
 import com.jxph.cloud.service.fast.api.pojo.CouponTaskJobExample;
 import com.jxph.cloud.service.fast.server.common.constant.CouponTaskJobStatusConstant;
+import com.jxph.cloud.service.fast.server.config.datasource.DataSourceContextHolder;
 import com.jxph.cloud.service.fast.server.dao.CouponTaskJobMapper;
+import com.jxph.cloud.service.fast.server.service.CouponTaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Scope;
@@ -18,10 +20,9 @@ import java.util.concurrent.Executor;
  * @date 2018/9/2 21:58
  */
 @Component
-@Scope("prototype")
 public class CouponJob implements TaskJob {
     @Autowired
-    private CouponTaskJobMapper couponTaskJobMapper;
+    private CouponTaskService couponTaskService;
     @Autowired
     @Qualifier("myTaskExecutePool")
     private Executor taskExecutePool;
@@ -32,14 +33,15 @@ public class CouponJob implements TaskJob {
 
     @Override
     public void processImpl() {
-        List<CouponTaskJob> list = selectCreationCouponJob();
+        List<CouponTaskJob> list = couponTaskService.selectCreationCouponJob();
         int len = list.size() / couponThreadCounts;
+        String dataSource = DataSourceContextHolder.getDataSource();
         if (len == 0) {
-            taskExecutePool.execute(new CouponThread(list));
+            taskExecutePool.execute(new CouponThread(list,dataSource));
         } else {
             for (int i = 0; i < couponThreadCounts; i++) {
                 List<CouponTaskJob> subList = list.subList(i * len, len * (i + 1) > list.size() ? list.size() : len * (i + 1));
-                taskExecutePool.execute(new CouponThread(subList));
+                taskExecutePool.execute(new CouponThread(subList,dataSource));
             }
         }
     }
@@ -49,48 +51,29 @@ public class CouponJob implements TaskJob {
         this.taskManagerId = id;
     }
 
-    private List<CouponTaskJob> selectCreationCouponJob() {
-        CouponTaskJobExample example = new CouponTaskJobExample();
-        CouponTaskJobExample.Criteria criteria = example.createCriteria();
-        criteria.andStatusEqualTo(CouponTaskJobStatusConstant.JOB_CREATION);
-        example.setOrderByClause("create_time");
-        example.setLimit(100);
-        example.setOffset(0);
-        return couponTaskJobMapper.selectByExample(example);
-    }
-
     class CouponThread extends Thread {
         private List<CouponTaskJob> couponTaskJobs;
+        private String dataSource;
 
-        public CouponThread(List<CouponTaskJob> couponTaskJobs) {
+        public CouponThread(List<CouponTaskJob> couponTaskJobs,String dataSource) {
             this.couponTaskJobs = couponTaskJobs;
+            this.dataSource = dataSource;
         }
 
         @Override
         public void run() {
+            DataSourceContextHolder.setDataSource(dataSource);
             couponTaskJobs.forEach(couponTaskJob -> {
                 couponTaskJob.setTaskManagerId(taskManagerId);
-                updateCouponTask(couponTaskJob, CouponTaskJobStatusConstant.JOB_EXECUTION);
+                couponTaskService.updateCouponTask(couponTaskJob, CouponTaskJobStatusConstant.JOB_EXECUTION);
                 try {
                     //业务处理
-                    updateCouponTask(couponTaskJob, CouponTaskJobStatusConstant.JOB_SUCCESS);
+                    couponTaskService.updateCouponTask(couponTaskJob, CouponTaskJobStatusConstant.JOB_SUCCESS);
                 } catch (Exception e) {
-                    updateCouponTask(couponTaskJob, CouponTaskJobStatusConstant.JOB_FAILURE, e.toString());
+                    couponTaskService.updateCouponTask(couponTaskJob, CouponTaskJobStatusConstant.JOB_FAILURE, e.toString());
                 }
             });
         }
 
-        private void updateCouponTask(CouponTaskJob couponTaskJob, int status) {
-            updateCouponTask(couponTaskJob, status, null);
-        }
-
-        private void updateCouponTask(CouponTaskJob couponTaskJob, int status, String remark) {
-            couponTaskJob.setStatus(status);
-            couponTaskJob.setUpdateTime(new Date());
-            if (remark != null) {
-                couponTaskJob.setRemark(remark);
-            }
-            couponTaskJobMapper.updateByPrimaryKeySelective(couponTaskJob);
-        }
     }
 }

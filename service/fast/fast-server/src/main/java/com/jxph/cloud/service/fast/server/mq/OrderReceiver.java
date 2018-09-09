@@ -28,6 +28,7 @@ public class OrderReceiver {
     ))
     public void onOrderMessage(@Payload TOrder order, @Headers Map<String, Object> headers, Channel channel) throws Exception {
         //消费者操作
+        channel.basicQos(1);
         log.info("收到消息开始消费，订单编号：{}",order.getId());
         Long deliveryTag = (Long) headers.get(AmqpHeaders.DELIVERY_TAG);
         channel.basicAck(deliveryTag, false);
