@@ -1,4 +1,4 @@
-package com.jxph.cloud.service.fast.server.task.taskjob;
+package com.jxph.cloud.service.fast.server.task.job;
 
 import org.springframework.stereotype.Component;
 
@@ -11,10 +11,5 @@ public class TestJob implements TaskJob {
     @Override
     public void processImpl() {
         System.out.println("错误");
-    }
-
-    @Override
-    public void setTaskManagerId(int id) {
-
     }
 }

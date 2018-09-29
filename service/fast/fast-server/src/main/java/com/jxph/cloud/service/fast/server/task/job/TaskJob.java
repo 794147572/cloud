@@ -1,4 +1,4 @@
-package com.jxph.cloud.service.fast.server.task.taskjob;
+package com.jxph.cloud.service.fast.server.task.job;
 
 /**
  * @author 谢秋豪
@@ -6,5 +6,4 @@ package com.jxph.cloud.service.fast.server.task.taskjob;
  */
 public interface TaskJob {
     void processImpl();
-    void setTaskManagerId(int id);
 }

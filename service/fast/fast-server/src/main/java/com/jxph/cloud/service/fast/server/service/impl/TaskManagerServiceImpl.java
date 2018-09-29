@@ -33,13 +33,12 @@ public class TaskManagerServiceImpl implements TaskManagerService {
     }
 
     @Override
-    public TaskManagerLog updateTaskMangerToSuccess(Integer taskManagerId) {
+    public void updateTaskMangerToSuccess(Integer taskManagerId) {
         TaskManagerLog taskManagerLog = new TaskManagerLog();
         taskManagerLog.setId(taskManagerId);
         taskManagerLog.setStatus(TaskManagerLogStatusConstant.TASK_MANAGER_SUCCESS);
         taskManagerLog.setUpdateTime(new Date());
         taskManagerLogMapper.updateByPrimaryKeySelective(taskManagerLog);
-        return taskManagerLog;
     }
 
 }

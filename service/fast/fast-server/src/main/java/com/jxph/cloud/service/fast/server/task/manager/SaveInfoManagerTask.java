@@ -1,21 +1,17 @@
-package com.jxph.cloud.service.fast.server.task.taskManager;
+package com.jxph.cloud.service.fast.server.task.manager;
 
 import com.jxph.cloud.service.fast.server.service.TaskManagerService;
-import com.jxph.cloud.service.fast.server.task.taskjob.TaskJob;
-import lombok.extern.slf4j.Slf4j;
-
-import java.util.Date;
+import com.jxph.cloud.service.fast.server.task.job.TaskSaveManagerInfoJob;
 
 /**
- * @author 谢秋豪
- * @date 2018/9/1 20:16
+ * @author xqh
+ * @date 2018/9/29 23:59
  */
-@Slf4j
-public class DefaultManagerTask extends AbstractManagerTask {
+public class SaveInfoManagerTask extends AbstractManagerTask<TaskSaveManagerInfoJob> {
     private int taskManagerId;
     private TaskManagerService taskManagerService;
 
-    public DefaultManagerTask(TaskJob taskJob,TaskManagerService taskManagerService) {
+    public SaveInfoManagerTask(TaskSaveManagerInfoJob taskJob, TaskManagerService taskManagerService) {
         super(taskJob);
         this.taskManagerService = taskManagerService;
     }

@@ -1,17 +1,14 @@
-package com.jxph.cloud.service.fast.server.task.taskjob;
+package com.jxph.cloud.service.fast.server.task.job;
 
+import com.jxph.cloud.common.exception.BaseException;
 import com.jxph.cloud.service.fast.api.pojo.CouponTaskJob;
-import com.jxph.cloud.service.fast.api.pojo.CouponTaskJobExample;
 import com.jxph.cloud.service.fast.server.common.constant.CouponTaskJobStatusConstant;
 import com.jxph.cloud.service.fast.server.config.datasource.DataSourceContextHolder;
-import com.jxph.cloud.service.fast.server.dao.CouponTaskJobMapper;
 import com.jxph.cloud.service.fast.server.service.CouponTaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -20,7 +17,7 @@ import java.util.concurrent.Executor;
  * @date 2018/9/2 21:58
  */
 @Component
-public class CouponJob implements TaskJob {
+public class CouponJob implements TaskSaveManagerInfoJob {
     @Autowired
     private CouponTaskService couponTaskService;
     @Autowired
@@ -62,17 +59,23 @@ public class CouponJob implements TaskJob {
 
         @Override
         public void run() {
-            DataSourceContextHolder.setDataSource(dataSource);
-            couponTaskJobs.forEach(couponTaskJob -> {
-                couponTaskJob.setTaskManagerId(taskManagerId);
-                couponTaskService.updateCouponTask(couponTaskJob, CouponTaskJobStatusConstant.JOB_EXECUTION);
-                try {
-                    //业务处理
-                    couponTaskService.updateCouponTask(couponTaskJob, CouponTaskJobStatusConstant.JOB_SUCCESS);
-                } catch (Exception e) {
-                    couponTaskService.updateCouponTask(couponTaskJob, CouponTaskJobStatusConstant.JOB_FAILURE, e.toString());
-                }
-            });
+            try {
+                DataSourceContextHolder.setDataSource(dataSource);
+                couponTaskJobs.forEach(couponTaskJob -> {
+                    couponTaskJob.setTaskManagerId(taskManagerId);
+                    couponTaskService.updateCouponTask(couponTaskJob, CouponTaskJobStatusConstant.JOB_EXECUTION);
+                    try {
+                        //业务处理
+                        couponTaskService.updateCouponTask(couponTaskJob, CouponTaskJobStatusConstant.JOB_SUCCESS);
+                    } catch (Exception e) {
+                        couponTaskService.updateCouponTask(couponTaskJob, CouponTaskJobStatusConstant.JOB_FAILURE, e.toString());
+                    }
+                });
+            } catch (Exception e){
+                throw new BaseException("异常");
+            } finally {
+                DataSourceContextHolder.clearDataSource();
+            }
         }
 
     }

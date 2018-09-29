@@ -1,4 +1,4 @@
-package com.jxph.cloud.service.fast.server.task.taskManager;
+package com.jxph.cloud.service.fast.server.task.manager;
 
 /**
  * @author 谢秋豪
